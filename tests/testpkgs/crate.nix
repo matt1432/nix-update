@@ -23,8 +23,6 @@ rustPlatform.buildRustPackage rec {
     attrPath = "crate";
     extraArgs = [
       "--flake"
-      "--file"
-      "REPLACE_THIS"
     ];
   };
 }

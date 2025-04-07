@@ -528,28 +528,43 @@ def update(opts: Options) -> Package:
 
     if package.has_update_script and opts.use_update_script:
         if opts.flake:
-            nixpkgs_path = run(
-                ["nix", "eval", "--impure", "--expr", "(import <nixpkgs> {}).path"],
+            update_script = run(
+                [
+                    "nix",
+                    "--extra-experimental-features",
+                    "flakes nix-command",
+                    "build",
+                    "--print-out-paths",
+                    "--impure",
+                    "--expr",
+                    f'with import <nixpkgs> {{}}; let pkg = {get_package(opts)}; in (pkgs.writeScript "updateScript" (builtins.toString (map builtins.toString (pkgs.lib.toList (pkg.updateScript.command or pkg.updateScript)))))',
+                ],
                 quiet=opts.quiet,
             ).stdout.strip()
 
             run(
                 [
-                    "nix-shell",
-                    path.join(nixpkgs_path, "maintainers/scripts/update.nix"),
+                    "nix",
+                    "develop",
                     "--impure",
-                    "--argstr",
-                    "skip-prompt",
-                    "true",
-                    "--argstr",
-                    "package",
-                    f"nixUpdatePkgs.{opts.attribute}",
-                    "--arg",
-                    "include-overlays",
-                    f"[(final: prev: {{nixUpdatePkgs.{opts.attribute} = {get_package(opts)};}})]",
+                    "--expr",
+                    f"with import <nixpkgs> {{}}; pkgs.mkShell {{inputsFrom = [{get_package(opts)}];}}",
+                    "--command",
+                    "bash",
+                    "-c",
+                    " ".join(
+                        [
+                            "env",
+                            f"UPDATE_NIX_NAME={package.name}",
+                            f"UPDATE_NIX_PNAME={package.pname}",
+                            f"UPDATE_NIX_OLD_VERSION={package.old_version}",
+                            f"UPDATE_NIX_ATTR_PATH={package.attribute}",
+                            update_script,
+                        ]
+                    ),
                     *opts.update_script_args,
                 ],
-                stdout=None,
+                cwd=opts.import_path,
                 quiet=opts.quiet,
             )
         else:

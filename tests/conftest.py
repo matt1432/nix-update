@@ -1,4 +1,3 @@
-import fileinput
 import os
 import shutil
 import subprocess
@@ -43,8 +42,6 @@ class Helpers:
                     ["git", "-C", tmpdirname, "commit", "-m", "first commit"],
                     check=True,
                 )
-                for line in fileinput.input(tmpdirname / "crate.nix", inplace=True):
-                    print(line.replace("REPLACE_THIS", str(tmpdirname)), end="")
             yield Path(tmpdirname)
 
 

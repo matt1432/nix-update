@@ -40,6 +40,7 @@ class Package:
     attribute: str
     import_path: InitVar[str]
     name: str
+    pname: str
     old_version: str
     filename: str
     line: int
@@ -168,6 +169,7 @@ let
     sanitizePosition (positionFromMeta pkg);
 in {{
   name = pkg.name;
+  pname = pkg.pname;
   old_version = pkg.version or (builtins.parseDrvName pkg.name).version;
   inherit raw_version_position;
   filename = position.file;
